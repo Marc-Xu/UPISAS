@@ -1,14 +1,14 @@
 from UPISAS.strategies.swim_reactive_strategy import ReactiveAdaptationManager
 from UPISAS.exemplar import Exemplar
-from UPISAS.exemplars.swim import SWIM
+from UPISAS.exemplars.dingnet import Dingnet
 import signal
 import sys
 import time
 
 if __name__ == '__main__':
     
-    exemplar = SWIM(auto_start=True)
-    time.sleep(3)
+    exemplar = Dingnet(auto_start=True)
+    time.sleep(20)
     exemplar.start_run()
     time.sleep(3)
 
