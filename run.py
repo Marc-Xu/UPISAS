@@ -5,6 +5,7 @@ from UPISAS.exemplars.dingnet import Dingnet
 import signal
 import sys
 import time
+import traceback
 
 if __name__ == '__main__':
     
@@ -28,7 +29,9 @@ if __name__ == '__main__':
                     strategy.execute()
             
     except (Exception, KeyboardInterrupt) as e:
-        print(str(e))
+        print("Traceback:")
+        traceback.print_exc()  # Full traceback for debugging
+        input("something went wrong")
         input("something went wrong")
         exemplar.stop_container()
         sys.exit(0)

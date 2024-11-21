@@ -42,12 +42,14 @@ class Strategy(ABC):
         url = '/'.join([self.exemplar.base_endpoint, endpoint_suffix])
         response = requests.put(url, json=adaptation)
         print("[Execute]\tposted configuration: " + str(adaptation))
+        print("[Execute] Adaptation Sent: ", adaptation)
+        print("[Execute] Response: ", response.status_code, response.text)
         if response.status_code == 404:
             logging.error("Cannot execute adaptation on remote system, check that the execute endpoint exists.")
             raise EndpointNotReachable
         return True
 
-    def get_adaptation_options(self, endpoint_suffix: "API Endpoint" = "adaptation_options", with_validation=True):
+    def get_adaptation_options(self, endpoint_suffix: str = "adaptation_options", with_validation=True):
         self.knowledge.adaptation_options = self._perform_get_request(endpoint_suffix)
         if with_validation:
             if(not self.knowledge.adaptation_options_schema): self.get_adaptation_options_schema()
@@ -65,12 +67,12 @@ class Strategy(ABC):
         logging.info("execute_schema set to: ")
         pp.pprint(self.knowledge.execute_schema)
 
-    def get_adaptation_options_schema(self, endpoint_suffix: "API Endpoint" = "adaptation_options_schema"):
+    def get_adaptation_options_schema(self, endpoint_suffix: str = "adaptation_options_schema"):
         self.knowledge.adaptation_options_schema = self._perform_get_request(endpoint_suffix)
         logging.info("adaptation_options_schema set to: ")
         pp.pprint(self.knowledge.adaptation_options_schema)
 
-    def _perform_get_request(self, endpoint_suffix: "API Endpoint"):
+    def _perform_get_request(self, endpoint_suffix: str):
         url = '/'.join([self.exemplar.base_endpoint, endpoint_suffix])
         response = get_response_for_get_request(url)
         if response.status_code == 404:
