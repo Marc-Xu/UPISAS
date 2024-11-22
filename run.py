@@ -1,8 +1,5 @@
-from UPISAS.strategies.swim_reactive_strategy import ReactiveAdaptationManager
-from UPISAS.strategies.empty_strategy import EmptyStrategy
-from UPISAS.exemplar import Exemplar
+from UPISAS.strategies.dingnet_signal_based_strategy import SignalBasedAdaptation
 from UPISAS.exemplars.dingnet import Dingnet
-import signal
 import sys
 import time
 import traceback
@@ -15,7 +12,7 @@ if __name__ == '__main__':
     time.sleep(3)
 
     try:
-        strategy = EmptyStrategy(exemplar)
+        strategy = SignalBasedAdaptation(exemplar)
 
         strategy.get_monitor_schema()
         strategy.get_adaptation_options_schema()
