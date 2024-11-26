@@ -4,12 +4,12 @@ from UPISAS.strategy import Strategy
 class SignalBasedAdaptation(Strategy):
 
     def analyze(self):
-
+        lower_threshold = -48
+        upper_threshold = -42
         data = self.knowledge.monitored_data
         mote_1 = data['moteStates'][0][0]
-        spreading_factor = mote_1['sf']
         signal_strength = mote_1['highestReceivedSignal']
-        if signal_strength and signal_strength < -48:
+        if signal_strength and not (lower_threshold < signal_strength < upper_threshold):
             print("[Analyze]\tSignal strength is poor, suggesting adaptation.")
             return True
         else:
