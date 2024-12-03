@@ -12,8 +12,9 @@ from pathlib import Path
 from os.path import dirname, realpath
 import time
 import statistics
+import numpy as np
 
-from UPISAS.strategies.swim_reactive_strategy import ReactiveAdaptationManager
+from UPISAS.strategies.dingnet_signal_based_strategy import SignalBasedAdaptation
 from UPISAS.exemplars.dingnet import Dingnet
 
 
@@ -62,12 +63,13 @@ class RunnerConfig:
     def create_run_table_model(self) -> RunTableModel:
         """Create and return the run_table model here. A run_table is a List (rows) of tuples (columns),
         representing each run performed"""
-        factor1 = FactorModel("rt_threshold", [0.75, 0.50, 0.25])
+        factor1 = FactorModel("upper_threshold", [-42, -40, -38])
+        factor2 = FactorModel("lower_threshold", [-48, -46, -44])
         self.run_table_model = RunTableModel(
-            factors=[factor1],
+            factors=[factor1, factor2],
             exclude_variations=[
             ],
-            data_columns=['utility']
+            data_columns=['packetLoss']
         )
         return self.run_table_model
 
@@ -81,15 +83,16 @@ class RunnerConfig:
         """Perform any activity required before starting a run.
         No context is available here as the run is not yet active (BEFORE RUN)"""
         self.exemplar = Dingnet(auto_start=True)
-        self.strategy = ReactiveAdaptationManager(self.exemplar)
-        time.sleep(3)
+        self.strategy = SignalBasedAdaptation(self.exemplar)
+        time.sleep(20)
         output.console_log("Config.before_run() called!")
 
     def start_run(self, context: RunnerContext) -> None:
         """Perform any activity required for starting the run here.
         For example, starting the target system to measure.
         Activities after starting the run should also be performed here."""
-        self.strategy.RT_THRESHOLD = float(context.run_variation['rt_threshold'])
+        self.strategy.UPPER_THRESHOLD = float(context.run_variation['upper_threshold'])
+        self.strategy.LOWER_THRESHOLD = float(context.run_variation['lower_threshold'])
 
         self.exemplar.start_run()
         time.sleep(3)
@@ -106,18 +109,14 @@ class RunnerConfig:
         self.strategy.get_adaptation_options_schema()
         self.strategy.get_execute_schema()
 
-        
-
-        while time_slept < 10:
-            
+        for _ in range(10):
             self.strategy.monitor(verbose=True)
             if self.strategy.analyze():
                 if self.strategy.plan():
                     self.strategy.execute()
 
             time.sleep(3)
-            time_slept+=3
-
+            time_slept += 3
 
         output.console_log("Config.interact() called!")
 
@@ -139,39 +138,16 @@ class RunnerConfig:
 
         output.console_log("Config.populate_run_data() called!")
 
-        basicRevenue = 1
-        optRevenue = 1.5
-        serverCost = 10
-        
-        precision = 1e-5
         mon_data = self.strategy.knowledge.monitored_data
-        utilities = []
         print("MON DATA")
         print(mon_data)
-        for i in range(len(mon_data["max_servers"])):
+        motes_data = mon_data["moteStates"]
+        packet_loss = []
+        for run_data in motes_data:
+            mote_0_data = run_data[0]
+            packet_loss.append(mote_0_data["packetLoss"])
 
-            maxServers = int(mon_data["max_servers"][i])
-            arrivalRateMean = mon_data["arrival_rate"][i]
-            dimmer = mon_data["dimmer_factor"][i]
-            maxThroughput = maxServers * self.strategy.MAX_SERVICE_RATE
-            avgServers = mon_data["servers"][i]
-            avgResponseTime = (mon_data["basic_rt"][i] * mon_data["basic_throughput"][i] + mon_data["opt_rt"][i] * mon_data["opt_throughput"][i]) / (mon_data["basic_throughput"][i] + mon_data["opt_throughput"][i])
-
-            Ur = (arrivalRateMean * ((1 - dimmer) * basicRevenue + dimmer * optRevenue))
-            Uc = serverCost * (maxServers - avgServers)
-            UrOpt = arrivalRateMean * optRevenue
-            utility = 0
-
-            if(avgResponseTime <= self.strategy.RT_THRESHOLD and Ur >= UrOpt - precision):
-                utility = Ur + Uc
-            else:                
-                if(avgResponseTime <= self.strategy.RT_THRESHOLD):
-                    utility = Ur
-                else:
-                    utility = min(0.0, arrivalRateMean - maxThroughput) * optRevenue
-            utilities.append(utility)
-        
-        return {"utility" : utilities}
+        return {"packet loss": f"{np.average(packet_loss): .02f}"}
 
     def after_experiment(self) -> None:
         """Perform any activity required after stopping the experiment here

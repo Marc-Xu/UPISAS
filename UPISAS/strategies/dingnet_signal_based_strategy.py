@@ -2,10 +2,12 @@ from UPISAS.strategy import Strategy
 
 
 class SignalBasedAdaptation(Strategy):
+    UPPER_THRESHOLD = -42
+    LOWER_THRESHOLD = -48
 
     def analyze(self):
-        lower_threshold = -48
-        upper_threshold = -42
+        lower_threshold = self.LOWER_THRESHOLD
+        upper_threshold = self.UPPER_THRESHOLD
         data = self.knowledge.monitored_data
         mote_1 = data['moteStates'][0][0]
         signal_strength = mote_1['highestReceivedSignal']
