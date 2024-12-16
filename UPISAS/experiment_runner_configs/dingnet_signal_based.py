@@ -24,7 +24,7 @@ class RunnerConfig:
 
     # ================================ USER SPECIFIC CONFIG ================================
     """The name of the experiment."""
-    name:                       str             = "new_dingnet_experiment"
+    name:                       str             = "new_dingnet_signal_based_experiment"
 
     """The path in which Experiment Runner will create a folder with the name `self.name`, in order to store the
     results from this experiment. (Path does not need to exist - it will be created if necessary.)
@@ -63,13 +63,10 @@ class RunnerConfig:
     def create_run_table_model(self) -> RunTableModel:
         """Create and return the run_table model here. A run_table is a List (rows) of tuples (columns),
         representing each run performed"""
-        factor1 = FactorModel("upper_threshold", [-42, -40, -38])
-        factor2 = FactorModel("lower_threshold", [-48, -46, -44])
         self.run_table_model = RunTableModel(
-            factors=[factor1, factor2],
-            exclude_variations=[
-            ],
-            data_columns=['packetLoss']
+            factors=[],
+            repetitions=2,
+            data_columns=['packetLoss', 'signalStrength'],
         )
         return self.run_table_model
 
@@ -91,8 +88,8 @@ class RunnerConfig:
         """Perform any activity required for starting the run here.
         For example, starting the target system to measure.
         Activities after starting the run should also be performed here."""
-        self.strategy.UPPER_THRESHOLD = float(context.run_variation['upper_threshold'])
-        self.strategy.LOWER_THRESHOLD = float(context.run_variation['lower_threshold'])
+        # self.strategy.UPPER_THRESHOLD = float(context.run_variation['upper_threshold'])
+        # self.strategy.LOWER_THRESHOLD = float(context.run_variation['lower_threshold'])
 
         self.exemplar.start_run()
         time.sleep(3)
@@ -139,15 +136,18 @@ class RunnerConfig:
         output.console_log("Config.populate_run_data() called!")
 
         mon_data = self.strategy.knowledge.monitored_data
-        print("MON DATA")
-        print(mon_data)
+        # print("MON DATA")
+        # print(mon_data)
         motes_data = mon_data["moteStates"]
         packet_loss = []
+        signal_strength = []
         for run_data in motes_data:
             mote_0_data = run_data[0]
             packet_loss.append(mote_0_data["packetLoss"])
+            signal_strength.append(mote_0_data["highestReceivedSignal"])
 
-        return {"packet loss": f"{np.average(packet_loss): .02f}"}
+        # return {"packetLoss": packet_loss, "signalStrength": signal_strength}
+        return {"packetLoss": f"{packet_loss[-1]: .02f}", "signalStrength": f"{signal_strength[-1]: .02f}"}
 
     def after_experiment(self) -> None:
         """Perform any activity required after stopping the experiment here
