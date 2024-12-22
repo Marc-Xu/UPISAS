@@ -11,7 +11,7 @@ class SignalBasedAdaptation(Strategy):
 
     def analyze(self):
         data = self.knowledge.monitored_data
-        mote_1 = data['moteStates'][0][0]
+        mote_1 = data['moteStates'][-1][0]
         signal_strength = mote_1['highestReceivedSignal']
         if signal_strength and not (self.LOWER_THRESHOLD < signal_strength < self.UPPER_THRESHOLD):
             print("[Analyze]\tSignal strength is poor, suggesting adaptation.")

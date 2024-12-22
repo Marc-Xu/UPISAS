@@ -15,6 +15,7 @@ import statistics
 import numpy as np
 
 from UPISAS.strategies.dingnet_baseline_strategy import Baseline
+from UPISAS.strategies.dingnet_q_learning_strategy import QLearningAdaptation
 from UPISAS.strategies.dingnet_signal_based_strategy import SignalBasedAdaptation
 from UPISAS.exemplars.dingnet import Dingnet
 
@@ -64,11 +65,11 @@ class RunnerConfig:
     def create_run_table_model(self) -> RunTableModel:
         """Create and return the run_table model here. A run_table is a List (rows) of tuples (columns),
         representing each run performed"""
-        strategy = FactorModel("strategy", ["Baseline", "Signal Based"])
+        strategy = FactorModel("strategy", ["Baseline", "Signal Based", "Q-Learning"])
         self.run_table_model = RunTableModel(
             factors=[strategy],
             repetitions=2,
-            data_columns=['packetLoss', 'signalStrength'],
+            data_columns=['packetLoss', 'signalStrength', 'transmissionPower'],
         )
         return self.run_table_model
 
@@ -91,6 +92,7 @@ class RunnerConfig:
         strategies = {
             "Baseline": Baseline,
             "Signal Based": SignalBasedAdaptation,
+            "Q-Learning": QLearningAdaptation,
         }
         strategy = context.run_variation["strategy"]
         self.strategy = strategies[strategy](self.exemplar)
@@ -112,13 +114,11 @@ class RunnerConfig:
         self.strategy.get_execute_schema()
 
         for _ in range(10):
+            time.sleep(3)
             self.strategy.monitor(verbose=True)
             if self.strategy.analyze():
                 if self.strategy.plan():
                     self.strategy.execute()
-
-            time.sleep(3)
-            time_slept += 3
 
         output.console_log("Config.interact() called!")
 
@@ -146,13 +146,24 @@ class RunnerConfig:
         motes_data = mon_data["moteStates"]
         packet_loss = []
         signal_strength = []
+        power = []
         for run_data in motes_data:
             mote_0_data = run_data[0]
             packet_loss.append(mote_0_data["packetLoss"])
             signal_strength.append(mote_0_data["highestReceivedSignal"])
+            power.append(mote_0_data["transmissionPower"])
 
-        # return {"packetLoss": packet_loss, "signalStrength": signal_strength}
-        return {"packetLoss": f"{packet_loss[-1]: .02f}", "signalStrength": f"{signal_strength[-1]: .02f}"}
+        # return {
+        #     "packetLoss": f"{packet_loss[-1]: .02f}",
+        #     "signalStrength": f"{signal_strength[-1]: .02f}",
+        #     "transmissionPower": power[-1]
+        # }
+
+        return {
+            "packetLoss": packet_loss,
+            "signalStrength": signal_strength,
+            "transmissionPower": power
+        }
 
     def after_experiment(self) -> None:
         """Perform any activity required after stopping the experiment here
